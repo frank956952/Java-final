@@ -112,8 +112,8 @@ public class AnalysisWindow extends JFrame {
         todayTitle.setForeground(new Color(0x475569));
         todayTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
 
-        String[] allMuscles = {"SHOULDER", "CHEST", "BACK", "LEG", "ARMS"};
-        String[] muscleNames = {"肩膀", "胸部", "背部", "腿部", "手臂"};
+        String[] allMuscles = {"SHOULDER", "CHEST", "BACK", "LEG", "ARMS","CORE"};
+        String[] muscleNames = {"肩膀", "胸部", "背部", "腿部", "手臂","核心"};
         Color[] muscleColors = {
             new Color(0xf59e0b), new Color(0xef4444), new Color(0x3b82f6),
             new Color(0x10b981), new Color(0x8b5cf6)
