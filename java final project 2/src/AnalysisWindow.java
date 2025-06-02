@@ -114,7 +114,7 @@ public class AnalysisWindow extends JFrame {
         String[] muscleNames = {"肩膀", "胸部", "背部", "腿部", "手臂","核心"};
         Color[] muscleColors = {
             new Color(0xf59e0b), new Color(0xef4444), new Color(0x3b82f6),
-            new Color(0x10b981), new Color(0x8b5cf6)
+            new Color(0x10b981), new Color(0x8b5cf6), new Color(0xec4899)
         };
         
         int[] todayCounts = new int[allMuscles.length];
