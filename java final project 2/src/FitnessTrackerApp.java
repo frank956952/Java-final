@@ -1,5 +1,7 @@
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.border.CompoundBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -15,10 +17,9 @@ import java.time.DayOfWeek; // Added for WeeklyPlan
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Map; // Added for WeeklyPlan
-import java.util.ArrayList; // Added for WeeklyPlan display
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
-import javax.swing.SwingConstants;
+// Added imports
 import javax.swing.Timer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -41,14 +42,152 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
     // private JTextField weightField;
     private JComboBox<Integer> setsComboBox;
     private JComboBox<Integer> repsComboBox;
-    private JComboBox<Double> weightComboBox;
-
-    // Timer components
+    private JComboBox<Double> weightComboBox;    // Timer components
     private JButton restTimerButton;
     private JLabel restTimerLabel;
     private javax.swing.Timer stopwatch;
     private boolean stopwatchRunning = false;
     private int elapsedSeconds = 0;
+
+    // Modern UI Color Scheme
+    private static final Color CARD_BACKGROUND = new Color(255, 255, 255);
+    private static final Color CARD_SHADOW = new Color(0, 0, 0, 20);
+    private static final Color PRIMARY_COLOR = new Color(64, 128, 255);
+    private static final Color SECONDARY_COLOR = new Color(108, 117, 125);
+    private static final Color SUCCESS_COLOR = new Color(40, 167, 69);
+    private static final Color BACKGROUND_COLOR = new Color(248, 249, 250);
+    private static final Color BORDER_COLOR = new Color(222, 226, 230);
+
+    // Custom Card Panel with rounded corners and shadow
+    private static class CardPanel extends JPanel {
+        private int arcWidth = 15;
+        private int arcHeight = 15;
+        private Color shadowColor = CARD_SHADOW;
+        private int shadowSize = 4;
+
+        public CardPanel(LayoutManager layout) {
+            super(layout);
+            setOpaque(false);
+            setBackground(CARD_BACKGROUND);
+            setBorder(new EmptyBorder(shadowSize, shadowSize, shadowSize, shadowSize));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int width = getWidth() - shadowSize;
+            int height = getHeight() - shadowSize;
+
+            // Draw shadow
+            g2.setColor(shadowColor);
+            g2.fillRoundRect(shadowSize, shadowSize, width, height, arcWidth, arcHeight);
+
+            // Draw card background
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, width, height, arcWidth, arcHeight);
+
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }    // Modern Button with 3D shadow effect
+    private static class ModernButton extends JButton {
+        private boolean isPressed = false;
+
+        public ModernButton(String text) {
+            super(text);
+            setContentAreaFilled(false);
+            setBorderPainted(false);
+            setFocusPainted(false);
+            setFont(getStaticChineseFont(Font.BOLD, 12));
+            setForeground(Color.WHITE);
+            setBackground(PRIMARY_COLOR);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setBorder(new EmptyBorder(12, 24, 12, 24));
+
+            // Add mouse listeners for 3D effect
+            addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mousePressed(java.awt.event.MouseEvent e) {
+                    isPressed = true;
+                    repaint();
+                }
+
+                @Override
+                public void mouseReleased(java.awt.event.MouseEvent e) {
+                    isPressed = false;
+                    repaint();
+                }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+            int width = getWidth();
+            int height = getHeight();
+            int shadowOffset = isPressed ? 2 : 4;
+            int buttonOffset = isPressed ? 2 : 0;
+
+            // Draw shadow
+            g2.setColor(new Color(0, 0, 0, 30));
+            g2.fillRoundRect(shadowOffset, shadowOffset, width - shadowOffset, height - shadowOffset, 10, 10);
+
+            // Draw button
+            g2.setColor(getBackground());
+            g2.fillRoundRect(buttonOffset, buttonOffset, width - shadowOffset, height - shadowOffset, 10, 10);
+
+            // Draw text
+            g2.setColor(getForeground());
+            g2.setFont(getFont());
+            FontMetrics fm = g2.getFontMetrics();
+            int textX = (width - fm.stringWidth(getText())) / 2;
+            int textY = (height + fm.getAscent() - fm.getDescent()) / 2;
+            g2.drawString(getText(), textX, textY);
+
+            g2.dispose();
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            FontMetrics fm = getFontMetrics(getFont());
+            int width = fm.stringWidth(getText()) + 48; // 24 padding on each side
+            int height = fm.getHeight() + 24; // 12 padding top and bottom
+            return new Dimension(width, height);
+        }
+
+        // Method to set button color scheme
+        public void setButtonStyle(Color backgroundColor, Color textColor) {
+            setBackground(backgroundColor);
+            setForeground(textColor);
+            repaint();
+        }
+
+        // Static method for Chinese font in static context
+        private static Font getStaticChineseFont(int style, int size) {
+            String[] chineseFonts = {
+                "Microsoft YaHei",
+                "SimHei",
+                "SimSun",
+                "Microsoft JhengHei",
+                "PMingLiU",
+                "Dialog"
+            };
+            
+            for (String fontName : chineseFonts) {
+                Font font = new Font(fontName, style, size);
+                if (font.canDisplay('中') && font.canDisplay('文')) {
+                    return font;
+                }
+            }
+            
+            return new Font(Font.SANS_SERIF, style, size);
+        }
+    }
 
     // Weekly Plan components
     private WeeklyPlan weeklyPlanManager;
@@ -62,15 +201,18 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
     public FitnessTrackerApp() { // Renamed constructor
         weeklyPlanManager = new WeeklyPlan(); // Initialize WeeklyPlan manager
         createAndShowGUI();
-    }
-
-    private void createAndShowGUI() {
+    }    private void createAndShowGUI() {
         frame = new JFrame("健身追蹤器");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(800, 600);
+        frame.setSize(900, 700);
         frame.setLocationRelativeTo(null);
+        frame.getContentPane().setBackground(BACKGROUND_COLOR);
 
+        // Modern styled tabbed pane
         JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(getChineseFont(Font.BOLD, 14));
+        tabbedPane.setBackground(BACKGROUND_COLOR);
+        tabbedPane.setForeground(SECONDARY_COLOR);
 
         // Panel for recording workouts
         JPanel recordWorkoutPanel = createRecordWorkoutPanel();
@@ -86,18 +228,19 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
         frame.add(tabbedPane);
         frame.setVisible(true);
         new TrainingReminderGUI();
-    }
+    }private JPanel createRecordWorkoutPanel() {
+        JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
+        mainPanel.setBackground(BACKGROUND_COLOR);
+        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));        // Top Panel: Body part, Start time, End time - Modern Card Style
+        CardPanel topCard = new CardPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        topCard.setBorder(new CompoundBorder(
+            topCard.getBorder(),
+            new TitledBorder(null, "健身課程設置", TitledBorder.LEFT, TitledBorder.TOP, 
+                getChineseFont(Font.BOLD, 14), PRIMARY_COLOR)
+        ));
 
-    private JPanel createRecordWorkoutPanel() {
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-
-        // Top Panel: Body part, Start time, End time
-        // Changed from BoxLayout with nested JPanels to a single FlowLayout for better component flow
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5)); // hgap=10, vgap=5
-
-        topPanel.add(new JLabel("選擇部位:"));
-        bodyPartComboBox = new JComboBox<>(BodyPart.values());
+        topCard.add(createStyledLabel("選擇部位:"));
+        bodyPartComboBox = createStyledComboBox(BodyPart.values());
         bodyPartComboBox.setSelectedItem(BodyPart.CHEST); // Default selection
         // Add ActionListener to bodyPartComboBox
         bodyPartComboBox.addActionListener(new ActionListener() {
@@ -106,65 +249,88 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
                 updateAvailableExercises();
             }
         });
-        cardioTime = new JTextField("",2);
+        topCard.add(bodyPartComboBox);
+
+        topCard.add(Box.createRigidArea(new Dimension(10, 0)));
+        topCard.add(createStyledLabel("輸入有氧時間(分鐘分鐘):"));
+        cardioTime = createStyledTextField("", 4);
+        topCard.add(cardioTime);
+
+        topCard.add(Box.createRigidArea(new Dimension(10, 0)));
+        topCard.add(createStyledLabel(""));  /*開始時間 (YYYY-MM-DD HH:MM):*/
+        startTimeField = createStyledTextField("2025-06-03 09:20", 16);  /* 這邊我想放現在時間local time */
+        topCard.add(startTimeField);
+
+        topCard.add(Box.createRigidArea(new Dimension(10, 0)));
+        topCard.add(createStyledLabel("結束時間 (YYYY-MM-DD HH:MM):"));
+        endTimeField = createStyledTextField("2025-05-20 10:48", 16);
+        topCard.add(endTimeField);
+
+        mainPanel.add(topCard, BorderLayout.NORTH);        // Center Panel: Available Exercises, Add/Remove Buttons, Selected Exercises - Modern Card Style
+        CardPanel centerCard = new CardPanel(new GridBagLayout());
+        centerCard.setBorder(new CompoundBorder(
+            centerCard.getBorder(),
+            new TitledBorder(null, "練習選擇", TitledBorder.LEFT, TitledBorder.TOP, 
+                getChineseFont(Font.BOLD, 14), PRIMARY_COLOR)
+        ));
         
-        topPanel.add(bodyPartComboBox);
-        topPanel.add(new JLabel("輸入有氧時間(分鐘)"));
-        topPanel.add(cardioTime);
-        topPanel.add(new JLabel("開始時間 (YYYY-MM-DD HH:MM):"));
-        startTimeField = new JTextField("2025-05-20 09:48", 16); // Adjusted column width for date-time
-        topPanel.add(startTimeField);
-
-        topPanel.add(new JLabel("結束時間 (YYYY-MM-DD HH:MM):"));
-        endTimeField = new JTextField("2025-05-20 10:48", 16); // Adjusted column width for date-time
-        topPanel.add(endTimeField);
-
-        mainPanel.add(topPanel, BorderLayout.NORTH);
-
-        // Center Panel: Available Exercises, Add/Remove Buttons, Selected Exercises
-        JPanel centerPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(10, 10, 10, 10);
 
         // Available Exercises
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 0.4;
         gbc.weighty = 1.0;
-        gbc.gridheight = 2;
-        JPanel availablePanel = new JPanel(new BorderLayout());
-        availablePanel.add(new JLabel("可用練習:", SwingConstants.CENTER), BorderLayout.NORTH);
-        availableExercisesListModel = new DefaultListModel<>();
+        gbc.gridheight = 2;        CardPanel availablePanel = new CardPanel(new BorderLayout());
+        availablePanel.setBorder(new CompoundBorder(
+            availablePanel.getBorder(),
+            new TitledBorder(null, "可用練習", TitledBorder.CENTER, TitledBorder.TOP, 
+                getChineseFont(Font.BOLD, 12), SECONDARY_COLOR)
+        ));        availableExercisesListModel = new DefaultListModel<>();
         availableExercisesList = new JList<>(availableExercisesListModel);
-        availableExercisesList.setCellRenderer(new ExerciseListCellRenderer()); // Set custom renderer
-        availablePanel.add(new JScrollPane(availableExercisesList), BorderLayout.CENTER);
-        centerPanel.add(availablePanel, gbc);
+        availableExercisesList.setCellRenderer(new ExerciseListCellRenderer());
+        availableExercisesList.setBackground(Color.WHITE);
+        // Improved selection colors for better readability
+        availableExercisesList.setSelectionBackground(new Color(230, 245, 255)); // Light blue background
+        availableExercisesList.setSelectionForeground(new Color(0, 60, 120)); // Dark blue text
+        availableExercisesList.setFont(getChineseFont(Font.PLAIN, 14)); // Larger font size
+        JScrollPane availableScrollPane = new JScrollPane(availableExercisesList);
+        availableScrollPane.setBorder(null);
+        availablePanel.add(availableScrollPane, BorderLayout.CENTER);
+        centerCard.add(availablePanel, gbc);
 
         // Add/Remove Buttons
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
-        JButton addExerciseButton = new JButton("添加練習 >>");
-        JButton removeExerciseButton = new JButton("<< 移除練習");
+        buttonPanel.setOpaque(false);
+        
+        ModernButton addExerciseButton = new ModernButton("添加練習 >>");
+        addExerciseButton.setButtonStyle(SUCCESS_COLOR, Color.WHITE);
+        ModernButton removeExerciseButton = new ModernButton("<< 移除練習");
+        removeExerciseButton.setButtonStyle(new Color(220, 53, 69), Color.WHITE);
 
         addExerciseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 addSelectedExercise();
             }
+        });        
+        removeExerciseButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Add remove functionality here
+                int selectedIndex = selectedExercisesList.getSelectedIndex();
+                if (selectedIndex >= 0) {
+                    selectedExercisesListModel.remove(selectedIndex);
+                }
+            }
         });
-        
-        Dimension buttonSize = new Dimension(120, 30);
-        addExerciseButton.setPreferredSize(buttonSize);
-        addExerciseButton.setMinimumSize(buttonSize);
-        addExerciseButton.setMaximumSize(buttonSize);
-        removeExerciseButton.setPreferredSize(buttonSize);
-        removeExerciseButton.setMinimumSize(buttonSize);
-        removeExerciseButton.setMaximumSize(buttonSize);
 
         buttonPanel.add(Box.createVerticalGlue());
         buttonPanel.add(addExerciseButton);
-        buttonPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+        buttonPanel.add(Box.createRigidArea(new Dimension(0, 15)));
         buttonPanel.add(removeExerciseButton);
         buttonPanel.add(Box.createVerticalGlue());
 
@@ -174,7 +340,7 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
         gbc.weighty = 1.0;
         gbc.gridheight = 2;
         gbc.fill = GridBagConstraints.VERTICAL;
-        centerPanel.add(buttonPanel, gbc);
+        centerCard.add(buttonPanel, gbc);
 
         // Selected Exercises
         gbc.gridx = 2;
@@ -182,53 +348,66 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
         gbc.weightx = 0.4;
         gbc.weighty = 1.0;
         gbc.gridheight = 2;
-        gbc.fill = GridBagConstraints.BOTH;
-        JPanel selectedPanel = new JPanel(new BorderLayout());
-        selectedPanel.add(new JLabel("已選練習:", SwingConstants.CENTER), BorderLayout.NORTH);
-        selectedExercisesListModel = new DefaultListModel<>();
+        gbc.fill = GridBagConstraints.BOTH;        CardPanel selectedPanel = new CardPanel(new BorderLayout());
+        selectedPanel.setBorder(new CompoundBorder(
+            selectedPanel.getBorder(),
+            new TitledBorder(null, "已選練習", TitledBorder.CENTER, TitledBorder.TOP, 
+                getChineseFont(Font.BOLD, 12), SECONDARY_COLOR)
+        ));        selectedExercisesListModel = new DefaultListModel<>();
         selectedExercisesList = new JList<>(selectedExercisesListModel);
-        selectedExercisesList.setCellRenderer(new WorkoutExerciseListCellRenderer()); // Set custom renderer
-        selectedPanel.add(new JScrollPane(selectedExercisesList), BorderLayout.CENTER);
-        centerPanel.add(selectedPanel, gbc);
+        selectedExercisesList.setCellRenderer(new WorkoutExerciseListCellRenderer());
+        selectedExercisesList.setBackground(Color.WHITE);
+        // Improved selection colors for better readability
+        selectedExercisesList.setSelectionBackground(new Color(245, 250, 245)); // Light green background
+        selectedExercisesList.setSelectionForeground(new Color(0, 100, 0)); // Dark green text
+        selectedExercisesList.setFont(getChineseFont(Font.PLAIN, 14)); // Larger font size
+        JScrollPane selectedScrollPane = new JScrollPane(selectedExercisesList);
+        selectedScrollPane.setBorder(null);
+        selectedPanel.add(selectedScrollPane, BorderLayout.CENTER);
+        centerCard.add(selectedPanel, gbc);
         
-        mainPanel.add(centerPanel, BorderLayout.CENTER);
-        
-        // Bottom Panel: Sets, Reps, Weight, Record Button
-        JPanel bottomPanel = new JPanel();
-        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
+        mainPanel.add(centerCard, BorderLayout.CENTER);
+          // Bottom Panel: Sets, Reps, Weight, Record Button - Modern Card Style
+        CardPanel bottomCard = new CardPanel(new BorderLayout(10, 10));        bottomCard.setBorder(new CompoundBorder(
+            bottomCard.getBorder(),
+            new TitledBorder(null, "練習詳細與記錄", TitledBorder.LEFT, TitledBorder.TOP, 
+                getChineseFont(Font.BOLD, 14), PRIMARY_COLOR)
+        ));
 
-        JPanel exerciseDetailsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        exerciseDetailsPanel.add(new JLabel("組數:"));
-        // setsField = new JTextField(5);
-        // exerciseDetailsPanel.add(setsField);
+        // Exercise Details Panel
+        JPanel exerciseDetailsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        exerciseDetailsPanel.setOpaque(false);
+        
+        exerciseDetailsPanel.add(createStyledLabel("組數:"));
         Integer[] setValues = new Integer[10];
         for (int i = 0; i < 10; i++) setValues[i] = i + 1;
-        setsComboBox = new JComboBox<>(setValues);
+        setsComboBox = createStyledComboBox(setValues);
         exerciseDetailsPanel.add(setsComboBox);
 
-        exerciseDetailsPanel.add(Box.createRigidArea(new Dimension(10, 0)));
-        exerciseDetailsPanel.add(new JLabel("次數:"));
-        // repsField = new JTextField(5);
-        // exerciseDetailsPanel.add(repsField);
+        exerciseDetailsPanel.add(Box.createRigidArea(new Dimension(15, 0)));
+        exerciseDetailsPanel.add(createStyledLabel("次數:"));
         Integer[] repValues = new Integer[20];
         for (int i = 0; i < 20; i++) repValues[i] = i + 1;
-        repsComboBox = new JComboBox<>(repValues);
+        repsComboBox = createStyledComboBox(repValues);
         exerciseDetailsPanel.add(repsComboBox);
 
-        exerciseDetailsPanel.add(Box.createRigidArea(new Dimension(10, 0)));
-        exerciseDetailsPanel.add(new JLabel("重量 (kg):"));
-        // weightField = new JTextField(5);
-        // exerciseDetailsPanel.add(weightField);
-        Double[] weightValues = new Double[41]; // 0.0 to 100.0 in 2.5 increments
+        exerciseDetailsPanel.add(Box.createRigidArea(new Dimension(15, 0)));
+        exerciseDetailsPanel.add(createStyledLabel("重量 (kg):"));
+        Double[] weightValues = new Double[41];
         for (int i = 0; i <= 40; i++) weightValues[i] = i * 2.5;
-        weightComboBox = new JComboBox<>(weightValues);
+        weightComboBox = createStyledComboBox(weightValues);
         exerciseDetailsPanel.add(weightComboBox);
 
-        bottomPanel.add(exerciseDetailsPanel);
+        bottomCard.add(exerciseDetailsPanel, BorderLayout.CENTER);
 
-        JPanel recordButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JButton recordExercisesButton = new JButton("記錄健身課程");
-        JButton callWindowButton = new JButton("呼叫視窗");
+        // Action Buttons Panel
+        JPanel actionButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        actionButtonPanel.setOpaque(false);
+        
+        ModernButton recordExercisesButton = new ModernButton("記錄健身課程");
+        recordExercisesButton.setButtonStyle(PRIMARY_COLOR, Color.WHITE);
+        ModernButton callWindowButton = new ModernButton("分析數據");
+        callWindowButton.setButtonStyle(SECONDARY_COLOR, Color.WHITE);
 
         // Action Listener for recordExercisesButton
         recordExercisesButton.addActionListener(new ActionListener() {
@@ -238,12 +417,12 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
             }
         });
 
-        recordButtonPanel.add(recordExercisesButton);
-        recordButtonPanel.add(callWindowButton);
-
-        // Timer components
-        restTimerButton = new JButton("開始休息");
-restTimerLabel = new JLabel("休息時間: 00:00");
+        actionButtonPanel.add(recordExercisesButton);
+        actionButtonPanel.add(callWindowButton);        // Timer components
+        restTimerButton = new ModernButton("開始休息");
+        ((ModernButton)restTimerButton).setButtonStyle(new Color(255, 193, 7), new Color(33, 37, 41));        restTimerLabel = createStyledLabel("休息時間: 00:00");
+        restTimerLabel.setFont(getChineseFont(Font.BOLD, 14));
+        restTimerLabel.setForeground(PRIMARY_COLOR);
         
         restTimerButton.addActionListener(new ActionListener() {
             @Override
@@ -276,11 +455,11 @@ restTimerLabel = new JLabel("休息時間: 00:00");
                 }
             }
         });
-        recordButtonPanel.add(restTimerButton);
-        recordButtonPanel.add(restTimerLabel);
         
-        bottomPanel.add(recordButtonPanel);
+        actionButtonPanel.add(restTimerButton);
+        actionButtonPanel.add(restTimerLabel);
         
+        bottomCard.add(actionButtonPanel, BorderLayout.SOUTH);        
         callWindowButton.addActionListener(e->{
             List<WorkoutData> data = WorkoutData.fetchRecentData();
             if(!data.isEmpty()){
@@ -289,7 +468,8 @@ restTimerLabel = new JLabel("休息時間: 00:00");
                 JOptionPane.showMessageDialog(mainPanel, "沒有可用的健身數據進行分析。", "無數據", JOptionPane.WARNING_MESSAGE);
             }           // Open the call window with the workout data
         });
-        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+        
+        mainPanel.add(bottomCard, BorderLayout.SOUTH);
 
         // Initial population of available exercises
         updateAvailableExercises();
@@ -297,6 +477,76 @@ restTimerLabel = new JLabel("休息時間: 00:00");
         return mainPanel;
 
 // recordExercisesButton 加入ACTIONLISTNER存入資料庫的 workout_exercises 資料表，並加入計時器按鈕，按移下開始碼表計時，在按一下結束，計算每組的休息時間
+    }    // Helper methods for creating styled components
+    private JLabel createStyledLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(getChineseFont(Font.BOLD, 12));
+        label.setForeground(SECONDARY_COLOR);
+        return label;
+    }
+
+    private JTextField createStyledTextField(String text, int columns) {
+        JTextField textField = new JTextField(text, columns);
+        textField.setFont(getChineseFont(Font.PLAIN, 12));
+        textField.setBorder(new CompoundBorder(
+            BorderFactory.createLineBorder(BORDER_COLOR, 1),
+            new EmptyBorder(8, 12, 8, 12)
+        ));
+        textField.setBackground(Color.WHITE);
+        return textField;
+    }
+
+    private <T> JComboBox<T> createStyledComboBox(T[] items) {
+        JComboBox<T> comboBox = new JComboBox<>(items);
+        comboBox.setFont(getChineseFont(Font.PLAIN, 12));
+        comboBox.setBackground(Color.WHITE);
+        comboBox.setBorder(new CompoundBorder(
+            BorderFactory.createLineBorder(BORDER_COLOR, 1),
+            new EmptyBorder(4, 8, 4, 8)
+        ));
+        return comboBox;
+    }    // Method to get proper Chinese font
+    private Font getChineseFont(int style, int size) {
+        // Try different Chinese fonts in order of preference
+        String[] chineseFonts = {
+            "Microsoft YaHei",  // 微软雅黑
+            "SimHei",           // 黑体
+            "SimSun",           // 宋体
+            "Microsoft JhengHei", // 微軟正黑體
+            "PMingLiU",         // 新細明體
+            "Dialog"            // Fallback font
+        };
+        
+        for (String fontName : chineseFonts) {
+            Font font = new Font(fontName, style, size);
+            if (font.canDisplay('中') && font.canDisplay('文')) {
+                return font;
+            }
+        }
+        
+        // Final fallback
+        return new Font(Font.SANS_SERIF, style, size);
+    }
+
+    // Static method for Chinese font in static context (for renderers)
+    private static Font getStaticChineseFont(int style, int size) {
+        String[] chineseFonts = {
+            "Microsoft YaHei",
+            "SimHei",
+            "SimSun",
+            "Microsoft JhengHei",
+            "PMingLiU",
+            "Dialog"
+        };
+        
+        for (String fontName : chineseFonts) {
+            Font font = new Font(fontName, style, size);
+            if (font.canDisplay('中') && font.canDisplay('文')) {
+                return font;
+            }
+        }
+        
+        return new Font(Font.SANS_SERIF, style, size);
     }
 
     private void saveWorkoutSessionAndExercises() {
@@ -338,11 +588,11 @@ restTimerLabel = new JLabel("休息時間: 00:00");
             conn.setAutoCommit(false); // Start transaction
 
             // 1. Save WorkoutSession and get its ID
-            String sessionSql = "INSERT INTO workout_sessions (start_time, end_time,cardio_time) VALUES (?, ?, ?)";
+            String sessionSql = "INSERT INTO workout_sessions (start_time, end_time, cardio_time) VALUES (?, ?, ?)";
             PreparedStatement sessionPstmt = conn.prepareStatement(sessionSql, PreparedStatement.RETURN_GENERATED_KEYS);
             sessionPstmt.setTimestamp(1, startTimeTs);
             sessionPstmt.setTimestamp(2, endTimeTs);
-            sessionPstmt.setInt(3, cardioNum);
+            sessionPstmt.setInt(3, cardioNum); // Save cardio time in minutes
             int affectedRows = sessionPstmt.executeUpdate();
 
             if (affectedRows == 0) {
@@ -421,64 +671,82 @@ restTimerLabel = new JLabel("休息時間: 00:00");
     }
 
     private JPanel createWeeklyPlanPanel() {
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        JPanel weeklyPlanPanel = new JPanel(new BorderLayout(10, 10));
+        weeklyPlanPanel.setBackground(BACKGROUND_COLOR);
+        weeklyPlanPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
 
         // Top panel for day selection
-        JPanel topControlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        topControlPanel.add(new JLabel("選擇星期:"));
-        dayOfWeekComboBox = new JComboBox<>(DayOfWeek.values());
-        topControlPanel.add(dayOfWeekComboBox);
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topPanel.setBackground(BACKGROUND_COLOR);
+        topPanel.add(createStyledLabel("選擇星期:"));
+        dayOfWeekComboBox = createStyledComboBox(DayOfWeek.values());
         dayOfWeekComboBox.addActionListener(e -> updateDailyPlanView());
-        mainPanel.add(topControlPanel, BorderLayout.NORTH);
+        topPanel.add(dayOfWeekComboBox);
+        weeklyPlanPanel.add(topPanel, BorderLayout.NORTH);
 
-        // Center panel with two sides: exercise selection and plan view
+        // Main content split pane
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         splitPane.setResizeWeight(0.5);
-        mainPanel.add(splitPane, BorderLayout.CENTER);
+        splitPane.setBackground(BACKGROUND_COLOR);
+        splitPane.setBorder(null);
 
-        // Left side: Exercise selection for the plan
-        JPanel leftPanel = new JPanel(new BorderLayout(5, 5));
-        leftPanel.setBorder(BorderFactory.createTitledBorder("添加運動到計劃"));
+        // Left panel for adding exercises
+        CardPanel addExerciseCard = new CardPanel(new BorderLayout(10, 10));
+        addExerciseCard.setBorder(new CompoundBorder(
+            new TitledBorder(BorderFactory.createLineBorder(BORDER_COLOR), "添加運動到計劃", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, getChineseFont(Font.BOLD, 12), PRIMARY_COLOR),
+            new EmptyBorder(10, 10, 10, 10)
+        ));
 
-        JPanel planExerciseSelectionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        planExerciseSelectionPanel.add(new JLabel("身體部位:"));
-        planBodyPartComboBox = new JComboBox<>(BodyPart.values());
-        planExerciseSelectionPanel.add(planBodyPartComboBox);
+        JPanel addExerciseControlsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        addExerciseControlsPanel.setBackground(CARD_BACKGROUND);
+        addExerciseControlsPanel.add(createStyledLabel("身體部位:"));
+        planBodyPartComboBox = createStyledComboBox(BodyPart.values());
         planBodyPartComboBox.addActionListener(e -> updatePlanAvailableExercises());
-
-        leftPanel.add(planExerciseSelectionPanel, BorderLayout.NORTH);
+        addExerciseControlsPanel.add(planBodyPartComboBox);
+        addExerciseCard.add(addExerciseControlsPanel, BorderLayout.NORTH);
 
         planAvailableExercisesListModel = new DefaultListModel<>();
         planAvailableExercisesList = new JList<>(planAvailableExercisesListModel);
         planAvailableExercisesList.setCellRenderer(new ExerciseListCellRenderer());
-        leftPanel.add(new JScrollPane(planAvailableExercisesList), BorderLayout.CENTER);
+        planAvailableExercisesList.setFont(getChineseFont(Font.PLAIN, 14));
+        JScrollPane planAvailableExercisesScrollPane = new JScrollPane(planAvailableExercisesList);
+        planAvailableExercisesScrollPane.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
+        addExerciseCard.add(planAvailableExercisesScrollPane, BorderLayout.CENTER);
 
-        JButton addExerciseToPlanButton = new JButton("添加到計劃");
-        addExerciseToPlanButton.addActionListener(e -> addExerciseToWeeklyPlan());
-        leftPanel.add(addExerciseToPlanButton, BorderLayout.SOUTH);
-        
-        splitPane.setLeftComponent(leftPanel);
+        ModernButton addExerciseToPlanButton = new ModernButton("添加到計劃");
+        addExerciseToPlanButton.setButtonStyle(SUCCESS_COLOR, Color.WHITE);
+        addExerciseToPlanButton.addActionListener(e -> addExerciseToWeeklyPlan()); // Added ActionListener
+        addExerciseCard.add(addExerciseToPlanButton, BorderLayout.SOUTH);
 
-        // Right side: Display of the plan for the selected day
-        JPanel rightPanel = new JPanel(new BorderLayout(5,5));
-        rightPanel.setBorder(BorderFactory.createTitledBorder("當日計劃"));
+        splitPane.setLeftComponent(addExerciseCard);
+
+        // Right panel for displaying daily plan
+        CardPanel dailyPlanCard = new CardPanel(new BorderLayout(10, 10));
+        dailyPlanCard.setBorder(new CompoundBorder(
+            new TitledBorder(BorderFactory.createLineBorder(BORDER_COLOR), "當日計劃", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, getChineseFont(Font.BOLD, 12), PRIMARY_COLOR),
+            new EmptyBorder(10, 10, 10, 10)
+        ));
 
         dailyPlanListModel = new DefaultListModel<>();
         dailyPlanList = new JList<>(dailyPlanListModel);
-        rightPanel.add(new JScrollPane(dailyPlanList), BorderLayout.CENTER);
+        dailyPlanList.setFont(getChineseFont(Font.PLAIN, 14));
+        JScrollPane dailyPlanScrollPane = new JScrollPane(dailyPlanList);
+        dailyPlanScrollPane.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
+        dailyPlanCard.add(dailyPlanScrollPane, BorderLayout.CENTER);
 
-        JButton removeExerciseFromPlanButton = new JButton("從計劃中移除選定項");
+        ModernButton removeExerciseFromPlanButton = new ModernButton("從計劃中移除選定項");
+        removeExerciseFromPlanButton.setButtonStyle(SECONDARY_COLOR, Color.WHITE);
         removeExerciseFromPlanButton.addActionListener(e -> removeExerciseFromWeeklyPlan());
-        rightPanel.add(removeExerciseFromPlanButton, BorderLayout.SOUTH);
+        dailyPlanCard.add(removeExerciseFromPlanButton, BorderLayout.SOUTH);
 
-        splitPane.setRightComponent(rightPanel);
+        splitPane.setRightComponent(dailyPlanCard);
+        weeklyPlanPanel.add(splitPane, BorderLayout.CENTER);
 
-        // Initial population
+        // Initialize views
         updatePlanAvailableExercises();
         updateDailyPlanView();
 
-        return mainPanel;
+        return weeklyPlanPanel;
     }
 
     private static class GymStatusPanel extends JPanel {
@@ -668,6 +936,7 @@ restTimerLabel = new JLabel("休息時間: 00:00");
             return;
         }
         weeklyPlanManager.addExerciseToPlan(selectedDay, selectedBodyPart, selectedExercise);
+        weeklyPlanManager.savePlanToDatabase(); // Save to DB after adding
         updateDailyPlanView(); // Refresh the view of the plan for the day
     }
 
@@ -703,6 +972,7 @@ restTimerLabel = new JLabel("休息時間: 00:00");
 
             if (exerciseToRemove != null) {
                 weeklyPlanManager.removeExerciseFromPlan(selectedDay, partToRemove, exerciseToRemove);
+                weeklyPlanManager.savePlanToDatabase(); // Save to DB after removing
                 updateDailyPlanView();
             } else {
                 JOptionPane.showMessageDialog(frame, "無法找到要移除的運動。", "錯誤", JOptionPane.ERROR_MESSAGE);
@@ -743,8 +1013,7 @@ restTimerLabel = new JLabel("休息時間: 00:00");
             }
         }
     }
-    
-    
+
     private void addSelectedExercise() {
         Exercise selectedExercise = availableExercisesList.getSelectedValue();
         if (selectedExercise == null) {
@@ -796,25 +1065,42 @@ restTimerLabel = new JLabel("休息時間: 00:00");
             // but kept for safety, though direct parsing is removed.
             JOptionPane.showMessageDialog(frame, "組數、次數和重量必須是有效的數字。", "輸入錯誤", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    // Custom ListCellRenderer for Exercise objects
+    }    // Custom ListCellRenderer for Exercise objects
     private static class ExerciseListCellRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            
             if (value instanceof Exercise) {
                 setText(((Exercise) value).getName());
             }
+            
+            // Set proper Chinese font
+            setFont(getStaticChineseFont(Font.PLAIN, 14));
+            
+            // Improved colors for better readability
+            if (isSelected) {
+                setBackground(new Color(230, 245, 255)); // Light blue background
+                setForeground(new Color(0, 60, 120)); // Dark blue text
+                setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(100, 150, 255), 1),
+                    BorderFactory.createEmptyBorder(5, 8, 5, 8)
+                ));
+            } else {
+                setBackground(Color.WHITE);
+                setForeground(Color.BLACK);
+                setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+            }
+            
+            setOpaque(true);
             return this;
         }
-    }
-
-    // Custom ListCellRenderer for WorkoutExercise objects
+    }    // Custom ListCellRenderer for WorkoutExercise objects
     private static class WorkoutExerciseListCellRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            
             if (value instanceof WorkoutExercise) {
                 WorkoutExercise we = (WorkoutExercise) value;
                 setText(String.format("%s - %d組 x %d次 @ %.1fkg", 
@@ -823,11 +1109,39 @@ restTimerLabel = new JLabel("休息時間: 00:00");
                                       we.getReps(), 
                                       we.getWeight()));
             }
+            
+            // Set proper Chinese font
+            setFont(getStaticChineseFont(Font.PLAIN, 14));
+            
+            // Improved colors for better readability
+            if (isSelected) {
+                setBackground(new Color(245, 250, 245)); // Light green background
+                setForeground(new Color(0, 100, 0)); // Dark green text
+                setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(100, 200, 100), 1),
+                    BorderFactory.createEmptyBorder(5, 8, 5, 8)
+                ));
+            } else {
+                setBackground(Color.WHITE);
+                setForeground(Color.BLACK);
+                setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8));
+            }
+            
+            setOpaque(true);
             return this;
         }
-    }
-
-    public static void main(String[] args) {
+    }public static void main(String[] args) {
+        // Set system properties for better Chinese font rendering
+        System.setProperty("file.encoding", "UTF-8");
+        System.setProperty("awt.useSystemAAFontSettings", "on");
+        System.setProperty("swing.aatext", "true");
+          // Set Look and Feel to system default for better font support
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
         // DatabaseManager dbManager = new DatabaseManager();
         // try {
         //     dbManager.createTables(); // Ensure tables exist
@@ -845,5 +1159,3 @@ restTimerLabel = new JLabel("休息時間: 00:00");
         });
     }
 }
-
-	

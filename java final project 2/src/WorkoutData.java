@@ -67,10 +67,10 @@ public class WorkoutData {
                 LocalDateTime start = rs.getTimestamp("start_time").toLocalDateTime();
                 LocalDateTime end = rs.getTimestamp("end_time").toLocalDateTime();
                 String group = rs.getString("body_parts_trained");
-                if(group == null) {
-                	group = "";
+                if (group == null) { // Add null check here
+                    group = ""; // Default to empty string if database value is NULL
                 }
-                int cardio = rs.getInt("cardio_time");
+                int cardio = rs.getInt("cardio_time"); // rs.getInt returns 0 if SQL NULL
 
                 dataList.add(new WorkoutData(start, end, group, cardio));
             }
