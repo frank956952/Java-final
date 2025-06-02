@@ -67,6 +67,9 @@ public class WorkoutData {
                 LocalDateTime start = rs.getTimestamp("start_time").toLocalDateTime();
                 LocalDateTime end = rs.getTimestamp("end_time").toLocalDateTime();
                 String group = rs.getString("body_parts_trained");
+                if(group == null) {
+                	group = "";
+                }
                 int cardio = rs.getInt("cardio_time");
 
                 dataList.add(new WorkoutData(start, end, group, cardio));

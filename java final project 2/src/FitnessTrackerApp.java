@@ -16,6 +16,14 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Map; // Added for WeeklyPlan
 import java.util.ArrayList; // Added for WeeklyPlan display
+import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+// Added imports
+import javax.swing.Timer;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.sql.Timestamp;
 
 
 public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
@@ -24,6 +32,7 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
     private JComboBox<BodyPart> bodyPartComboBox;
     private JTextField startTimeField;
     private JTextField endTimeField;
+    private JTextField cardioTime;
     private JList<Exercise> availableExercisesList;
     private DefaultListModel<Exercise> availableExercisesListModel;
     private JList<WorkoutExercise> selectedExercisesList;
@@ -34,6 +43,13 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
     private JComboBox<Integer> setsComboBox;
     private JComboBox<Integer> repsComboBox;
     private JComboBox<Double> weightComboBox;
+
+    // Timer components
+    private JButton restTimerButton;
+    private JLabel restTimerLabel;
+    private javax.swing.Timer stopwatch;
+    private boolean stopwatchRunning = false;
+    private int elapsedSeconds = 0;
 
     // Weekly Plan components
     private WeeklyPlan weeklyPlanManager;
@@ -91,8 +107,11 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
                 updateAvailableExercises();
             }
         });
+        cardioTime = new JTextField("",2);
+        
         topPanel.add(bodyPartComboBox);
-
+        topPanel.add(new JLabel("輸入有氧時間(分鐘)"));
+        topPanel.add(cardioTime);
         topPanel.add(new JLabel("開始時間 (YYYY-MM-DD HH:MM):"));
         startTimeField = new JTextField("2025-05-20 09:48", 16); // Adjusted column width for date-time
         topPanel.add(startTimeField);
@@ -209,10 +228,58 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
         bottomPanel.add(exerciseDetailsPanel);
 
         JPanel recordButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JButton recordSessionButton = new JButton("記錄健身課程");
+        JButton recordExercisesButton = new JButton("記錄健身課程");
         JButton callWindowButton = new JButton("呼叫視窗");
-        recordButtonPanel.add(recordSessionButton);
+
+        // Action Listener for recordExercisesButton
+        recordExercisesButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveWorkoutSessionAndExercises();
+            }
+        });
+
+        recordButtonPanel.add(recordExercisesButton);
         recordButtonPanel.add(callWindowButton);
+
+        // Timer components
+        restTimerButton = new JButton("開始休息");
+restTimerLabel = new JLabel("休息時間: 00:00");
+        
+        restTimerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (!stopwatchRunning) {
+                    elapsedSeconds = 0; // Reset for new rest period
+                    if (stopwatch == null) {
+                        stopwatch = new Timer(1000, new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent ae) {
+                                elapsedSeconds++;
+                                int minutes = elapsedSeconds / 60;
+                                int seconds = elapsedSeconds % 60;
+                                restTimerLabel.setText(String.format("休息時間: %02d:%02d", minutes, seconds));
+                            }
+                        });
+                    }
+                    restTimerLabel.setText("休息時間: 00:00"); // Reset label display
+                    stopwatch.start();
+                    restTimerButton.setText("結束休息");
+                    stopwatchRunning = true;
+                } else {
+                    if (stopwatch != null) {
+                        stopwatch.stop();
+                    }
+                    // The label already shows the final time.
+                    restTimerButton.setText("開始休息");
+                    stopwatchRunning = false;
+                    // elapsedSeconds now holds the total rest time for the last period
+                }
+            }
+        });
+        recordButtonPanel.add(restTimerButton);
+        recordButtonPanel.add(restTimerLabel);
+        
         bottomPanel.add(recordButtonPanel);
         
         callWindowButton.addActionListener(e->{
@@ -229,6 +296,129 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
         updateAvailableExercises();
 
         return mainPanel;
+
+// recordExercisesButton 加入ACTIONLISTNER存入資料庫的 workout_exercises 資料表，並加入計時器按鈕，按移下開始碼表計時，在按一下結束，計算每組的休息時間
+    }
+
+    private void saveWorkoutSessionAndExercises() {
+        String startTimeStr = startTimeField.getText();
+        String endTimeStr = endTimeField.getText();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm"); 
+        Timestamp startTimeTs = null;
+        Timestamp endTimeTs = null;
+        int cardioNum = Integer.parseInt(cardioTime.getText());
+
+        try {
+            if (startTimeStr.trim().isEmpty() || endTimeStr.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "開始和結束時間不能為空。", "時間錯誤", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            Date parsedStartTime = sdf.parse(startTimeStr);
+            startTimeTs = new Timestamp(parsedStartTime.getTime());
+            Date parsedEndTime = sdf.parse(endTimeStr);
+            endTimeTs = new Timestamp(parsedEndTime.getTime());
+
+            if(endTimeTs.before(startTimeTs)){
+                JOptionPane.showMessageDialog(frame, "結束時間不能早於開始時間。", "時間邏輯錯誤", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+        } catch (java.text.ParseException ex) {
+            JOptionPane.showMessageDialog(frame, "開始或結束時間格式不正確。請使用 YYYY-MM-DD HH:MM 格式。", "時間格式錯誤", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (selectedExercisesListModel.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "請先添加運動到已選練習列表。", "無運動記錄", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Connection conn = null;
+        try {
+            conn = DatabaseManager.getConnection(); 
+            conn.setAutoCommit(false); // Start transaction
+
+            // 1. Save WorkoutSession and get its ID
+            String sessionSql = "INSERT INTO workout_sessions (start_time, end_time,cardio_time) VALUES (?, ?, ?)";
+            PreparedStatement sessionPstmt = conn.prepareStatement(sessionSql, PreparedStatement.RETURN_GENERATED_KEYS);
+            sessionPstmt.setTimestamp(1, startTimeTs);
+            sessionPstmt.setTimestamp(2, endTimeTs);
+            sessionPstmt.setInt(3, cardioNum);
+            int affectedRows = sessionPstmt.executeUpdate();
+
+            if (affectedRows == 0) {
+                throw new SQLException("創建健身課程記錄失敗，沒有行受到影響。");
+            }
+
+            int sessionId;
+            try (ResultSet generatedKeys = sessionPstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    sessionId = generatedKeys.getInt(1);
+                } else {
+                    throw new SQLException("創建健身課程記錄失敗，無法獲取ID。");
+                }
+            }
+            sessionPstmt.close();
+
+            // 2. Save each WorkoutExercise to workout_exercises table
+            // Column order: workout_session_id, exercise_id, sets, reps, weight, rest_periods_seconds
+            String exerciseSql = "INSERT INTO workout_exercises (workout_session_id, exercise_id, sets, reps, weight, rest_periods_seconds) VALUES (?, ?, ?, ?, ?, ?)";
+            PreparedStatement exercisePstmt = conn.prepareStatement(exerciseSql);
+
+            for (int i = 0; i < selectedExercisesListModel.getSize(); i++) {
+                WorkoutExercise we = selectedExercisesListModel.getElementAt(i);
+                if (we.getExercise() == null || we.getExercise().getId() == 0) { 
+                     JOptionPane.showMessageDialog(frame, "選中的運動 '" + (we.getExercise() != null ? we.getExercise().getName() : "未知") + "' 沒有有效的ID。", "運動數據錯誤", JOptionPane.ERROR_MESSAGE);
+                     conn.rollback();
+                     return;
+                }
+                exercisePstmt.setInt(1, sessionId);
+                exercisePstmt.setInt(2, we.getExercise().getId()); 
+                exercisePstmt.setInt(3, we.getSets());
+                exercisePstmt.setInt(4, we.getReps());
+                exercisePstmt.setDouble(5, we.getWeight());
+                exercisePstmt.setInt(6, elapsedSeconds); // Save the last recorded rest period
+                exercisePstmt.addBatch();
+            }
+            exercisePstmt.executeBatch();
+            exercisePstmt.close();
+
+            conn.commit(); // Commit transaction
+            JOptionPane.showMessageDialog(frame, "健身課程已成功記錄！", "記錄成功", JOptionPane.INFORMATION_MESSAGE);
+
+            selectedExercisesListModel.clear();
+            // Reset timer display and value after successful save
+            restTimerLabel.setText("休息時間: 00:00");
+            elapsedSeconds = 0; 
+            // Optionally clear/reset time fields if desired
+            // startTimeField.setText("YYYY-MM-DD HH:MM"); 
+            // endTimeField.setText("YYYY-MM-DD HH:MM");
+
+        } catch (SQLException ex) {
+            if (conn != null) {
+                try {
+                    conn.rollback(); 
+                } catch (SQLException e_roll) {
+                    System.err.println("Rollback failed: " + e_roll.getMessage());
+                }
+            }
+            JOptionPane.showMessageDialog(frame, "記錄健身課程時發生資料庫錯誤: " + ex.getMessage(), "資料庫錯誤", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace(); 
+        } catch (NullPointerException npe) { 
+             JOptionPane.showMessageDialog(frame, "發生了空指針異常，可能是運動數據不完整: " + npe.getMessage(), "程序錯誤", JOptionPane.ERROR_MESSAGE);
+             npe.printStackTrace();
+             if (conn != null) try { conn.rollback(); } catch (SQLException ignored) {}
+        }
+        finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException ex_close) {
+                     System.err.println("Failed to close connection: " + ex_close.getMessage());
+                }
+            }
+        }
     }
 
     private JPanel createWeeklyPlanPanel() {
@@ -655,3 +845,5 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
         });
     }
 }
+
+	
