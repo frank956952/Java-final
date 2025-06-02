@@ -19,7 +19,6 @@ import java.util.ArrayList; // Added for WeeklyPlan display
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-// Added imports
 import javax.swing.Timer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -744,7 +743,8 @@ restTimerLabel = new JLabel("休息時間: 00:00");
             }
         }
     }
-
+    
+    
     private void addSelectedExercise() {
         Exercise selectedExercise = availableExercisesList.getSelectedValue();
         if (selectedExercise == null) {
