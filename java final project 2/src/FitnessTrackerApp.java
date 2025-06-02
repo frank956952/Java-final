@@ -826,7 +826,7 @@ restTimerLabel = new JLabel("休息時間: 00:00");
             return this;
         }
     }
-
+    
     public static void main(String[] args) {
         // DatabaseManager dbManager = new DatabaseManager();
         // try {
