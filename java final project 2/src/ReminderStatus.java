@@ -1,5 +1,5 @@
-import java.util.prefs.Preferences;
 import java.time.LocalDate;
+import java.util.prefs.Preferences;
 
 public class ReminderStatus {
 	private static final Preferences prefs = Preferences.userRoot().node("training_reminder");
