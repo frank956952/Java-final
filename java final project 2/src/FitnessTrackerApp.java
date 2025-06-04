@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.ArrayList;
 import java.time.DayOfWeek; // Added for WeeklyPlan
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -24,6 +25,9 @@ import javax.swing.Timer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.sql.Timestamp;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.stream.Collectors;
 
 
 public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
@@ -588,11 +592,24 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
             conn.setAutoCommit(false); // Start transaction
 
             // 1. Save WorkoutSession and get its ID
-            String sessionSql = "INSERT INTO workout_sessions (start_time, end_time, cardio_time) VALUES (?, ?, ?)";
+            String sessionSql = "INSERT INTO workout_sessions (start_time, end_time, body_parts_trained, cardio_time) VALUES (?, ?, ?, ?)";
             PreparedStatement sessionPstmt = conn.prepareStatement(sessionSql, PreparedStatement.RETURN_GENERATED_KEYS);
+            List<WorkoutExercise> exercises = new ArrayList<>();
+            for (int i = 0; i < selectedExercisesListModel.getSize(); i++) {
+                exercises.add(selectedExercisesListModel.getElementAt(i));
+            }
+
+            Set<BodyPart> bodyParts = exercises.stream().map(we -> we.getExercise().getBodyPart()).collect(Collectors.toSet());
+            StringBuilder sb = new StringBuilder();
+            for (BodyPart bp : bodyParts) {
+                if (sb.length() > 0) sb.append(",");
+                sb.append(bp.name());
+            }
+            String bodyPartsStr = sb.toString();
             sessionPstmt.setTimestamp(1, startTimeTs);
             sessionPstmt.setTimestamp(2, endTimeTs);
-            sessionPstmt.setInt(3, cardioNum); // Save cardio time in minutes
+            sessionPstmt.setString(3, bodyPartsStr);
+            sessionPstmt.setInt(4, cardioNum);// Save cardio time in minutes
             int affectedRows = sessionPstmt.executeUpdate();
 
             if (affectedRows == 0) {
@@ -608,7 +625,7 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
                 }
             }
             sessionPstmt.close();
-
+            
             // 2. Save each WorkoutExercise to workout_exercises table
             // Column order: workout_session_id, exercise_id, sets, reps, weight, rest_periods_seconds
             String exerciseSql = "INSERT INTO workout_exercises (workout_session_id, exercise_id, sets, reps, weight, rest_periods_seconds) VALUES (?, ?, ?, ?, ?, ?)";
@@ -1130,7 +1147,8 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
             setOpaque(true);
             return this;
         }
-<       public static void main(String[] args) {
+    }
+        public static void main(String[] args) {
         // Set system properties for better Chinese font rendering
         System.setProperty("file.encoding", "UTF-8");
         System.setProperty("awt.useSystemAAFontSettings", "on");
@@ -1142,7 +1160,6 @@ public class FitnessTrackerApp { // Renamed from main to FitnessTrackerApp
             e.printStackTrace();
         }
         
-        cdb533a9fd40ec4b144b8d12ccd782ea62422375
         // DatabaseManager dbManager = new DatabaseManager();
         // try {
         //     dbManager.createTables(); // Ensure tables exist
